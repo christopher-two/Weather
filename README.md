@@ -1,66 +1,90 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM).
+# Weather — Aplicación Kotlin Multiplatform
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Aplicación de ejemplo escrita en Kotlin Multiplatform y Compose Multiplatform que muestra datos meteorológicos obtenidos desde la API de OpenWeather. El proyecto incluye targets para Android, iOS, Web (WASM) y Desktop (JVM) y está organizado para compartir lógica de dominio y UI con Compose.
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+Características principales
+- Consulta del clima actual de una ubicación usando la API de OpenWeather.
+- UI construida con Compose Multiplatform (reutilizable entre targets).
+- Arquitectura limpia con capas de dominio, repositorio y presentación.
+- Inyección de dependencias con Koin.
+- Cliente HTTP multiplataforma con Ktor.
 
-### Build and Run Android Application
+Stack tecnológico
+- Lenguaje: Kotlin Multiplatform (Kotlin/MPP)
+- UI: Compose Multiplatform
+- HTTP: Ktor client
+- DI: Koin
+- Targets: Android, iOS (SwiftUI host), Desktop (JVM), Web (WASM)
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
+Estructura relevante del proyecto
+- composeApp/src/commonMain/kotlin/org/christophertwo/weather
+  - App.kt — punto de entrada multiplataforma (Composable)
+  - domain/ — modelos, DTOs, repositorio y provider del cliente HTTP
+    - OpenWeatherRepositoryImpl.kt — implementación del repositorio que consume la API
+    - HttpClientProvider.kt — proveedor del cliente Ktor
+    - dto/ y model/ — mapeos de la respuesta a dominio
+  - domain/usecase/FetchWeatherUseCase.kt — caso de uso para obtener el clima
+  - presentation/features/main — composables, viewmodel y estados (MainScreen, MainViewModel)
+  - di/ — módulos de Koin (DomainModule, ViewModelModule)
+- iosApp — proyecto iOS con entrypoint Swift/SwiftUI que aloja el composable para iOS
+- composeApp/src/androidMain — Application y MainActivity para Android
+- composeApp/src/jvmMain / wasmJsMain — entradas para Desktop y Web
+
+Configuración necesaria
+1) API Key de OpenWeather
+   - Obtén una API Key en https://openweathermap.org/.
+   - Para ejecutar en local, exporta la variable de entorno OPENWEATHER_API_KEY o agrégala en tu archivo local seguro (local.properties) según prefieras.
+
+   Ejemplo (Linux/macOS):
+   export OPENWEATHER_API_KEY=tu_api_key_aqui
+
+   También puedes exportarla justo al ejecutar Gradle:
+   OPENWEATHER_API_KEY=tu_api_key_aqui ./gradlew :composeApp:assembleDebug
+
+2) Configuración adicional
+   - Asegúrate de tener Java JDK (11+ recomendado) y Android SDK si vas a compilar para Android.
+   - Para iOS, abre el workspace/ carpeta iosApp en Xcode desde macOS.
+
+Compilar y ejecutar
+Desde la raíz del proyecto (usa el wrapper incluido):
+
+- Android (ensamblar APK de debug):
   ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
 
-### Build and Run Desktop (JVM) Application
+  Ejecuta desde Android Studio o instala el APK en un emulador/dispositivo.
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
+- Desktop (JVM):
   ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
 
-### Build and Run Web Application
-
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
+- Web (WASM) — modo desarrollo (servidor web local):
   ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-  ```
 
-### Build and Run iOS Application
+- iOS:
+  - Abre iosApp/iosApp.xcodeproj o iosApp/ en Xcode y ejecuta la app en un simulador o dispositivo.
+  - Alternativamente, usa las tareas de Gradle para generar frameworks si lo prefieres.
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+Notas de arquitectura y desarrollo
+- Inyección: Los módulos Koin están en composeApp/src/commonMain/kotlin/org/christophertwo/weather/di.
+  Se inicializa en App.kt para ambientes de desarrollo.
+- Repositorio: OpenWeatherRepositoryImpl encapsula la llamada a la API y transforma DTOs a modelos de dominio.
+- Usecases: FetchWeatherUseCase representa la lógica de negocio para obtener el clima.
+- ViewModel: MainViewModel contiene el estado y expone acciones (MainAction) para la UI.
+- HTTP: HttpClientProvider centraliza la configuración del cliente Ktor (timeouts, logging, motores según target).
 
----
+Pruebas
+- Hay pruebas comunes en composeApp/src/commonTest. Ejecuta:
+  ./gradlew :composeApp:check
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+Contribuir
+- Abrir issues para reportar bugs o proponer mejoras.
+- Crear ramas temáticas y enviar pull requests con descripciones claras.
+- Mantener la retrocompatibilidad en los módulos compartidos cuando sea posible.
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+Licencia
+- Añade la licencia que prefieras en el archivo LICENSE en la raíz del repositorio.
+
+Contacto
+- Este repositorio contiene el código de la app Weather. Para dudas internas del proyecto, revisa los comentarios en los archivos bajo composeApp/src/commonMain/kotlin/org/christophertwo/weather.
+
+
+(README generado automáticamente — editar según preferencias y añadir capturas, badge de CI, y la licencia si corresponde.)
